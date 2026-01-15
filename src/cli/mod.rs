@@ -29,6 +29,10 @@ pub struct Cli {
     #[arg(long, global = true)]
     pub dry_run: bool,
 
+    /// Disable TUI (useful for CI/CD)
+    #[arg(long, global = true)]
+    pub no_tui: bool,
+
     /// Override the working directory
     #[arg(long, global = true)]
     pub cwd: Option<PathBuf>,
