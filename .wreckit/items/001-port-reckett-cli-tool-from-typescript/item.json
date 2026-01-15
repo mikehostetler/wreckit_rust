@@ -1,0 +1,26 @@
+{
+  "schema_version": 1,
+  "id": "001-port-reckett-cli-tool-from-typescript",
+  "title": "Port Reckett CLI tool from TypeScript",
+  "section": "core",
+  "state": "implementing",
+  "overview": "The Reckett tool exists in TypeScript and needs to be ported to a new implementation while preserving all existing features.\n\n**Motivation:** Enable continued development and potentially improved architecture through a fresh implementation that incorporates lessons learned from the TypeScript version.\n\n**Success criteria:**\n- All features from the TypeScript version are evaluated and mapped\n- Tool can orchestrate prompts through each loop step\n- Tool can push a pull request with end results\n\n**Technical constraints:**\n- Reference existing TypeScript implementation in local file system\n- Must support the same deterministic workflow loop pattern",
+  "branch": null,
+  "pr_url": null,
+  "pr_number": null,
+  "last_error": "Not all stories are done",
+  "created_at": "2026-01-15T15:03:03.936Z",
+  "updated_at": "2026-01-15T16:06:19.287Z",
+  "problem_statement": "The Wreckit tool exists in TypeScript and needs to be ported to a new implementation while preserving all existing features. Wreckit lives in /Users/mhostetler/Source/MikeHostetler/wreckit",
+  "motivation": "Enable continued development and potentially improved architecture through a fresh implementation that incorporates lessons learned from the TypeScript version.",
+  "success_criteria": [
+    "All features from the TypeScript version are evaluated and mapped",
+    "Tool can orchestrate prompts through each loop step",
+    "Tool can push a pull request with end results",
+    "Ported to Rust"
+  ],
+  "technical_constraints": [
+    "Reference existing TypeScript implementation in local file system",
+    "Must support the same deterministic workflow loop pattern"
+  ]
+}

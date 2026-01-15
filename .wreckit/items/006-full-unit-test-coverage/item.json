@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "id": "006-full-unit-test-coverage",
+  "title": "Full unit test coverage",
+  "section": "tooling",
+  "state": "idea",
+  "overview": "The ported implementation needs thorough test coverage to ensure reliability.\n\n**Motivation:** Full test coverage ensures the port is correct and provides confidence for future changes.\n\n**Success criteria:**\n- Full unit tests for all pieces",
+  "branch": null,
+  "pr_url": null,
+  "pr_number": null,
+  "last_error": "Agent failed with exit code 1",
+  "created_at": "2026-01-15T15:03:03.938Z",
+  "updated_at": "2026-01-15T15:29:39.921Z",
+  "problem_statement": "The ported implementation needs thorough test coverage to ensure reliability.",
+  "motivation": "Full test coverage ensures the port is correct and provides confidence for future changes.",
+  "success_criteria": [
+    "Full unit tests for all pieces"
+  ]
+}

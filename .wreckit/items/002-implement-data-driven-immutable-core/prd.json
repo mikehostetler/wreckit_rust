@@ -1,0 +1,113 @@
+{
+  "schema_version": 1,
+  "id": "002-implement-data-driven-immutable-core",
+  "branch_name": "wreckit/002-implement-data-driven-immutable-core",
+  "user_stories": [
+    {
+      "id": "US-002-001",
+      "title": "Add PartialEq derives and fix module compilation",
+      "acceptance_criteria": [
+        "Story struct derives PartialEq",
+        "Item struct derives PartialEq",
+        "Prd struct derives PartialEq",
+        "src/workflow/mod.rs file exists with module documentation",
+        "cargo test --lib compiles without errors",
+        "All existing tests pass after adding derives"
+      ],
+      "priority": 1,
+      "status": "pending",
+      "notes": "Foundation work - enables testing of immutability guarantees. Must be done first as other stories depend on PartialEq for assertions."
+    },
+    {
+      "id": "US-002-002",
+      "title": "Add immutable builder methods to Item",
+      "acceptance_criteria": [
+        "Item::with_state() method returns new Item with updated state and timestamp",
+        "Item::with_branch() method returns new Item with updated branch and timestamp",
+        "Item::with_pr() method returns new Item with PR URL/number and timestamp",
+        "Item::with_error() method returns new Item with error message and timestamp",
+        "Item::with_updated_timestamp() method returns new Item with current timestamp",
+        "Item::touch() method marked #[deprecated]",
+        "All new methods take self by value and return new Item",
+        "All existing Item tests pass",
+        "Builder methods can be chained: item.with_state(Done).with_error(None)"
+      ],
+      "priority": 1,
+      "status": "pending",
+      "notes": "Core builder API for Item. All methods must update updated_at timestamp automatically. Deprecation warning guides users to new API."
+    },
+    {
+      "id": "US-002-003",
+      "title": "Add immutable builder methods to Prd and Story",
+      "acceptance_criteria": [
+        "Story::with_status() returns new Story with given status",
+        "Story::with_notes() returns new Story with given notes",
+        "Story::as_done() convenience method marks story as done",
+        "Prd::with_story_status() returns new Prd with updated story status",
+        "Prd::with_story() returns new Prd with story added or replaced",
+        "Prd::with_story_done() returns new Prd with specified story marked done",
+        "Prd::with_all_stories_done() returns new Prd with all stories marked done",
+        "Prd::mark_story_done() marked #[deprecated]",
+        "All existing Prd/Story tests pass",
+        "with_story_status() handles missing story_id gracefully (returns unchanged)"
+      ],
+      "priority": 2,
+      "status": "pending",
+      "notes": "Builder API for Prd handles collection updates immutably. Missing story_id should not panic - return Prd unchanged. Collection cloning is acceptable for small data sizes."
+    },
+    {
+      "id": "US-002-004",
+      "title": "Refactor domain transitions to use immutable builders",
+      "acceptance_criteria": [
+        "apply_state_transition() uses item.with_state() instead of field mutation",
+        "make_item() test helper uses .with_state() builder",
+        "make_prd_with_stories() test helper uses story.with_status() builder",
+        "make_prd_with_stories() in validation.rs uses story.with_status() builder",
+        "No direct field mutation (item.field =) in domain logic",
+        "All domain tests pass",
+        "test_transition_does_not_mutate_original passes"
+      ],
+      "priority": 2,
+      "status": "pending",
+      "notes": "Update core business logic to use immutable patterns. Test helpers still use mut locally for vec.push() which is acceptable - only business logic must be immutable."
+    },
+    {
+      "id": "US-002-005",
+      "title": "Update PRD tests to use immutable builders",
+      "acceptance_criteria": [
+        "test_prd_all_stories_done uses with_story_done() instead of mark_story_done()",
+        "test_prd_has_pending_stories uses with_story_done()",
+        "test_prd_next_pending_story uses with_story_done()",
+        "Tests use variable shadowing: prd = prd.with_story_done(id)",
+        "#![allow(deprecated)] added to test module for deprecated method tests",
+        "All PRD tests pass with no deprecation warnings in new code",
+        "Test logic unchanged - only mechanics of state updates change"
+      ],
+      "priority": 3,
+      "status": "pending",
+      "notes": "Update tests to demonstrate immutable patterns. Suppress deprecation warnings for old tests. Shadowing pattern (prd = prd.with_x()) is idiomatic Rust."
+    },
+    {
+      "id": "US-002-006",
+      "title": "Add property-based tests for immutability guarantees",
+      "acceptance_criteria": [
+        "proptest dependency added to Cargo.toml dev-dependencies",
+        "src/domain/property_tests.rs module created",
+        "Property test: apply_state_transition never mutates input",
+        "Property test: with_state is immutable (original unchanged)",
+        "Property test: with_story_status is immutable",
+        "Property test: with_pr is immutable",
+        "Property test: with_state is idempotent (same state twice = same result)",
+        "Property test: with_story_status is idempotent",
+        "Property test: with_all_stories_done is idempotent",
+        "Property test: with_state updates timestamp",
+        "Property test: with_pr updates timestamp",
+        "Property tests run successfully with cargo test",
+        "Property tests complete in reasonable time (< 30 seconds)"
+      ],
+      "priority": 4,
+      "status": "pending",
+      "notes": "Property tests provide strong guarantees by testing invariants across hundreds of random inputs. Use proptest strategies for generating random WorkflowState, StoryStatus, Items, and Prds. Each property should run default 256 test cases."
+    }
+  ]
+}

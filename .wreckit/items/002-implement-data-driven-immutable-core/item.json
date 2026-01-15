@@ -1,0 +1,24 @@
+{
+  "schema_version": 1,
+  "id": "002-implement-data-driven-immutable-core",
+  "title": "Implement data-driven immutable core",
+  "section": "core",
+  "state": "implementing",
+  "overview": "The core logic needs to be predictable, testable, and reliable through immutable data patterns.\n\n**Motivation:** Immutable and idempotent operations make the system more predictable, easier to test, and safer to retry or recover from failures.\n\n**Success criteria:**\n- Core uses immutable data operations\n- Operations are idempotent\n\n**Technical constraints:**\n- Data-driven architecture\n- Focus on immutability and idempotency",
+  "branch": null,
+  "pr_url": null,
+  "pr_number": null,
+  "last_error": null,
+  "created_at": "2026-01-15T15:03:03.937Z",
+  "updated_at": "2026-01-15T16:13:11.367Z",
+  "problem_statement": "The core logic needs to be predictable, testable, and reliable through immutable data patterns.",
+  "motivation": "Immutable and idempotent operations make the system more predictable, easier to test, and safer to retry or recover from failures.",
+  "success_criteria": [
+    "Core uses immutable data operations",
+    "Operations are idempotent"
+  ],
+  "technical_constraints": [
+    "Data-driven architecture",
+    "Focus on immutability and idempotency"
+  ]
+}

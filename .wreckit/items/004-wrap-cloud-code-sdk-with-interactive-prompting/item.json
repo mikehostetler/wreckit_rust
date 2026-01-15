@@ -1,0 +1,25 @@
+{
+  "schema_version": 1,
+  "id": "004-wrap-cloud-code-sdk-with-interactive-prompting",
+  "title": "Wrap Cloud Code SDK with interactive prompting",
+  "section": "core",
+  "state": "idea",
+  "overview": "The tool needs to orchestrate prompts through the Cloud Code SDK while allowing interactive clarification from users.\n\n**Motivation:** Interactive clarifying questions from the agent lead to better results during workflow execution.\n\n**Success criteria:**\n- Cloud Code SDK is fully wrapped\n- Agent can request/ask clarifying questions during prompt sessions\n- Workflow orchestration through each loop step works\n\n**Technical constraints:**\n- Must wrap Cloud Code SDK\n- Support interactive Q&A during workflow",
+  "branch": null,
+  "pr_url": null,
+  "pr_number": null,
+  "last_error": "Agent failed with exit code 1",
+  "created_at": "2026-01-15T15:03:03.937Z",
+  "updated_at": "2026-01-15T15:29:36.463Z",
+  "problem_statement": "The tool needs to orchestrate prompts through the Cloud Code SDK while allowing interactive clarification from users.",
+  "motivation": "Interactive clarifying questions from the agent lead to better results during workflow execution.",
+  "success_criteria": [
+    "Cloud Code SDK is fully wrapped",
+    "Agent can request/ask clarifying questions during prompt sessions",
+    "Workflow orchestration through each loop step works"
+  ],
+  "technical_constraints": [
+    "Must wrap Cloud Code SDK",
+    "Support interactive Q&A during workflow"
+  ]
+}
