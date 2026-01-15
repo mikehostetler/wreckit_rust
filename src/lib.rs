@@ -17,6 +17,7 @@ pub mod fs;
 pub mod git;
 pub mod prompts;
 pub mod schemas;
+pub mod tui;
 pub mod workflow;
 
 // Re-export commonly used types

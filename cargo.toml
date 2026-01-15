@@ -41,6 +41,13 @@ tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 # Template rendering
 regex = "1"
 
+# Terminal detection
+atty = "0.2"
+
+# TUI framework
+ratatui = "0.29"
+crossterm = "0.28"
+
 [dev-dependencies]
 tempfile = "3"
 proptest = "1.0"

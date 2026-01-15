@@ -15,7 +15,7 @@
         "All existing tests pass after adding derives"
       ],
       "priority": 1,
-      "status": "pending",
+      "status": "done",
       "notes": "Foundation work - enables testing of immutability guarantees. Must be done first as other stories depend on PartialEq for assertions."
     },
     {
@@ -33,7 +33,7 @@
         "Builder methods can be chained: item.with_state(Done).with_error(None)"
       ],
       "priority": 1,
-      "status": "pending",
+      "status": "done",
       "notes": "Core builder API for Item. All methods must update updated_at timestamp automatically. Deprecation warning guides users to new API."
     },
     {
@@ -52,7 +52,7 @@
         "with_story_status() handles missing story_id gracefully (returns unchanged)"
       ],
       "priority": 2,
-      "status": "pending",
+      "status": "done",
       "notes": "Builder API for Prd handles collection updates immutably. Missing story_id should not panic - return Prd unchanged. Collection cloning is acceptable for small data sizes."
     },
     {
@@ -68,7 +68,7 @@
         "test_transition_does_not_mutate_original passes"
       ],
       "priority": 2,
-      "status": "pending",
+      "status": "done",
       "notes": "Update core business logic to use immutable patterns. Test helpers still use mut locally for vec.push() which is acceptable - only business logic must be immutable."
     },
     {
@@ -84,7 +84,7 @@
         "Test logic unchanged - only mechanics of state updates change"
       ],
       "priority": 3,
-      "status": "pending",
+      "status": "done",
       "notes": "Update tests to demonstrate immutable patterns. Suppress deprecation warnings for old tests. Shadowing pattern (prd = prd.with_x()) is idiomatic Rust."
     },
     {
@@ -106,7 +106,7 @@
         "Property tests complete in reasonable time (< 30 seconds)"
       ],
       "priority": 4,
-      "status": "pending",
+      "status": "done",
       "notes": "Property tests provide strong guarantees by testing invariants across hundreds of random inputs. Use proptest strategies for generating random WorkflowState, StoryStatus, Items, and Prds. Each property should run default 256 test cases."
     }
   ]
