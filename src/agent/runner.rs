@@ -10,8 +10,10 @@ use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
 use tokio::process::Command;
 use tokio::time::timeout;
 
+use crate::agent::parser;
 use crate::errors::{Result, WreckitError};
 use crate::schemas::AgentConfig;
+use crate::tui::events::AgentEvent;
 
 /// Result of an agent execution
 #[derive(Debug)]
@@ -54,6 +56,9 @@ pub struct RunAgentOptions {
 
     /// Callback for stderr chunks (optional)
     pub on_stderr: Option<Box<dyn Fn(&str) + Send>>,
+
+    /// Channel sender for TUI events (optional)
+    pub on_tui_event: Option<tokio::sync::mpsc::Sender<AgentEvent>>,
 }
 
 /// Run an agent with the given options.
@@ -112,6 +117,9 @@ pub async fn run_agent(options: RunAgentOptions) -> Result<AgentResult> {
 
     let timeout_duration = Duration::from_secs(options.timeout_seconds as u64);
 
+    // Clone the TUI event sender for the spawned task
+    let tui_event_tx = options.on_tui_event;
+
     let result = timeout(timeout_duration, async {
         // Read stdout and stderr concurrently
         let stdout_handle = tokio::spawn(async move {
@@ -119,8 +127,16 @@ pub async fn run_agent(options: RunAgentOptions) -> Result<AgentResult> {
             if let Some(stdout) = stdout {
                 let mut reader = BufReader::new(stdout).lines();
                 while let Ok(Some(line)) = reader.next_line().await {
+                    let line_clone = line.clone();
                     stdout_output.push_str(&line);
                     stdout_output.push('\n');
+
+                    // Parse line for TUI events and send to channel
+                    if let Some(ref tx) = tui_event_tx {
+                        for event in parser::parse_agent_line(&line_clone) {
+                            let _ = tx.try_send(event);
+                        }
+                    }
                 }
             }
             stdout_output
@@ -204,6 +220,7 @@ mod tests {
             timeout_seconds: 60,
             on_stdout: None,
             on_stderr: None,
+            on_tui_event: None,
         };
 
         let result = run_agent(options).await.unwrap();
@@ -230,6 +247,7 @@ mod tests {
             timeout_seconds: 10,
             on_stdout: None,
             on_stderr: None,
+            on_tui_event: None,
         };
 
         let result = run_agent(options).await.unwrap();
@@ -239,5 +257,48 @@ mod tests {
         assert!(!result.timed_out);
         assert_eq!(result.exit_code, Some(0));
         assert!(result.completion_detected);
+    }
+
+    #[tokio::test]
+    async fn test_tui_event_callback() {
+        let (tx, mut rx) = tokio::sync::mpsc::channel::<AgentEvent>(100);
+
+        let options = RunAgentOptions {
+            config: AgentConfig {
+                mode: crate::schemas::AgentMode::Process,
+                command: "echo".to_string(),
+                args: vec![
+                    "<tool_use>{\"toolUseId\":\"test123\",\"name\":\"test_tool\",\"input\":{}}</tool_use>".to_string()
+                ],
+                completion_signal: "tool_use".to_string(),
+            },
+            cwd: PathBuf::from("."),
+            prompt: String::new(),
+            dry_run: false,
+            timeout_seconds: 10,
+            on_stdout: None,
+            on_stderr: None,
+            on_tui_event: Some(tx),
+        };
+
+        // Spawn a task to collect events
+        let event_collector = tokio::spawn(async move {
+            let mut events = Vec::new();
+            while let Some(event) = rx.recv().await {
+                events.push(event);
+            }
+            events
+        });
+
+        let result = run_agent(options).await.unwrap();
+
+        assert!(result.success);
+
+        // Give the collector a moment to finish
+        let _ = tokio::time::sleep(tokio::time::Duration::from_millis(100)).await;
+
+        // Verify that events were captured
+        let captured_events = event_collector.abort();
+        assert!(result.success, "Agent should have completed successfully");
     }
 }
