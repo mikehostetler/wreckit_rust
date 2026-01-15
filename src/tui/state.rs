@@ -86,9 +86,9 @@ pub struct TuiState {
 }
 
 impl TuiState {
-    const MAX_THOUGHTS: usize = 50;
-    const MAX_TOOLS: usize = 20;
-    const MAX_LOGS: usize = 500;
+    pub const MAX_THOUGHTS: usize = 50;
+    pub const MAX_TOOLS: usize = 20;
+    pub const MAX_LOGS: usize = 500;
 
     /// Create new TUI state from items
     pub fn new(items: Vec<Item>) -> Self {
