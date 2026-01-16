@@ -1,0 +1,536 @@
+{
+  "schema_version": 1,
+  "id": "001-port-reckett-cli-tool-from-typescript",
+  "branch_name": "wreckit/001-port-reckett-cli-tool-from-typescript",
+  "user_stories": [
+    {
+      "id": "US-001",
+      "title": "Project setup with Cargo.toml and module structure",
+      "acceptance_criteria": [
+        "Cargo.toml exists with all required dependencies (clap, serde, serde_json, tokio, thiserror, chrono, tracing, regex)",
+        "src/main.rs compiles and prints help text",
+        "src/lib.rs exists and declares all module paths",
+        "cargo build succeeds without errors",
+        "cargo clippy passes with no warnings"
+      ],
+      "priority": 1,
+      "status": "pending",
+      "notes": "Foundation for all other work. Dependencies: clap 4.x, serde 1.x, tokio 1.x (full features), thiserror 1.x, chrono 0.4.x, tracing 0.1.x, regex 1.x"
+    },
+    {
+      "id": "US-002",
+      "title": "Define schema types with serde derives",
+      "acceptance_criteria": [
+        "WorkflowState enum with Idea, Researched, Planned, Implementing, InPr, Done variants",
+        "Item struct with all fields matching TypeScript schema (id, title, section, state, overview, branch, pr_url, pr_number, last_error, created_at, updated_at, optional context fields)",
+        "Config struct with agent configuration nested struct",
+        "Prd struct with user_stories array of Story structs",
+        "All types implement Serialize, Deserialize, Clone, Debug",
+        "JSON round-trip tests pass for all types",
+        "Serde renames match TypeScript field names (snake_case)"
+      ],
+      "priority": 1,
+      "status": "pending",
+      "notes": "Schemas must be 100% compatible with TypeScript JSON files. Use #[serde(rename_all = \"snake_case\")] and #[serde(skip_serializing_if = \"Option::is_none\")] for optional fields."
+    },
+    {
+      "id": "US-003",
+      "title": "Implement custom error types",
+      "acceptance_criteria": [
+        "WreckitError enum defined with all error variants (RepoNotFound, InvalidJson, SchemaValidation, FileNotFound, ConfigError, AgentError, GitError, Timeout)",
+        "Each variant has descriptive error message",
+        "Error codes can be extracted for programmatic handling",
+        "Implements std::error::Error via thiserror",
+        "to_exit_code function returns appropriate exit codes"
+      ],
+      "priority": 1,
+      "status": "pending",
+      "notes": "Error types from TypeScript: src/errors.ts:1-107"
+    },
+    {
+      "id": "US-004",
+      "title": "Implement file system path utilities",
+      "acceptance_criteria": [
+        "find_repo_root walks up directory tree looking for .git + .wreckit",
+        "Returns RepoNotFound error if not found",
+        "Returns error if .wreckit exists without .git",
+        "get_wreckit_dir, get_config_path, get_items_dir, get_item_dir functions work correctly",
+        "get_research_path, get_plan_path, get_prd_path, get_progress_log_path functions work correctly",
+        "All paths are relative to repository root"
+      ],
+      "priority": 1,
+      "status": "pending",
+      "notes": "Reference: TypeScript src/fs/paths.ts:1-91"
+    },
+    {
+      "id": "US-005",
+      "title": "Implement JSON file read/write with schema validation",
+      "acceptance_criteria": [
+        "read_json<T> function reads and deserializes JSON file",
+        "Returns FileNotFound error for missing files",
+        "Returns InvalidJson error for parse failures",
+        "Returns SchemaValidation error for type mismatches",
+        "write_json function serializes with pretty formatting (2-space indent)",
+        "read_item, write_item, read_prd, write_prd convenience functions work",
+        "Atomic write support (write to temp, rename)"
+      ],
+      "priority": 1,
+      "status": "pending",
+      "notes": "Reference: TypeScript src/fs/json.ts:1-97. Consider using tempfile crate for atomic writes."
+    },
+    {
+      "id": "US-006",
+      "title": "Implement workflow state machine",
+      "acceptance_criteria": [
+        "WORKFLOW_STATES constant defines state ordering",
+        "get_state_index returns 0-based index of state",
+        "get_next_state returns next state in sequence, None for Done",
+        "get_allowed_next_states returns single-element vec or empty for Done",
+        "is_terminal_state returns true only for Done",
+        "All functions are pure (no side effects)"
+      ],
+      "priority": 1,
+      "status": "pending",
+      "notes": "Reference: TypeScript src/domain/states.ts:1-58. State machine is linear: idea → researched → planned → implementing → in_pr → done"
+    },
+    {
+      "id": "US-007",
+      "title": "Implement transition validation rules",
+      "acceptance_criteria": [
+        "ValidationContext struct with has_research_md, has_plan_md, prd, has_pr, pr_merged fields",
+        "can_enter_researched requires has_research_md",
+        "can_enter_planned requires has_plan_md and valid prd",
+        "can_enter_implementing requires prd with pending stories",
+        "can_enter_in_pr requires all stories done and has_pr",
+        "can_enter_done requires pr_merged",
+        "validate_transition checks target is next state AND calls appropriate can_enter_* function",
+        "all_stories_done helper function works correctly",
+        "has_pending_stories helper function works correctly"
+      ],
+      "priority": 1,
+      "status": "pending",
+      "notes": "Reference: TypeScript src/domain/validation.ts:1-112. Validation is target-state-specific."
+    },
+    {
+      "id": "US-008",
+      "title": "Implement pure state transition function",
+      "acceptance_criteria": [
+        "apply_state_transition takes immutable Item reference and ValidationContext",
+        "Returns TransitionResult enum (Success with new Item, or Error with message)",
+        "Success result contains new Item with updated state and updated_at timestamp",
+        "Original item is never mutated",
+        "Returns error for terminal state (Done)",
+        "Returns error for invalid transitions"
+      ],
+      "priority": 1,
+      "status": "pending",
+      "notes": "Reference: TypeScript src/domain/transitions.ts:1-46. Pure function - never mutates input."
+    },
+    {
+      "id": "US-009",
+      "title": "Implement configuration loading with defaults",
+      "acceptance_criteria": [
+        "DEFAULT_CONFIG constant matches TypeScript defaults (base_branch: main, branch_prefix: wreckit/, etc.)",
+        "load_config reads .wreckit/config.json if exists",
+        "Missing file returns defaults (not error)",
+        "Invalid JSON returns InvalidJson error",
+        "merge_with_defaults fills in missing fields from defaults",
+        "Agent config includes mode, command, args, completion_signal"
+      ],
+      "priority": 2,
+      "status": "pending",
+      "notes": "Reference: TypeScript src/config.ts:1-146. Default completion_signal: <promise>COMPLETE</promise>"
+    },
+    {
+      "id": "US-010",
+      "title": "Implement prompt template loading and rendering",
+      "acceptance_criteria": [
+        "load_prompt_template loads from .wreckit/prompts/ or bundled defaults",
+        "Bundled prompts included via include_str! macro",
+        "render_prompt substitutes {{variable}} placeholders",
+        "render_prompt handles {{#if var}}...{{/if}} conditionals",
+        "render_prompt handles {{#ifnot var}}...{{/ifnot}} inverse conditionals",
+        "PromptVariables struct includes all template variables (id, title, section, overview, item_path, branch_name, base_branch, completion_signal, sdk_mode, research, plan, prd, progress)"
+      ],
+      "priority": 2,
+      "status": "pending",
+      "notes": "Reference: TypeScript src/prompts.ts:1-113. Use regex for template rendering. Copy prompt templates from TypeScript prompts/ directory."
+    },
+    {
+      "id": "US-011",
+      "title": "Implement process-based agent runner",
+      "acceptance_criteria": [
+        "run_agent spawns process with command and args",
+        "Prompt is written to stdin, then stdin is closed",
+        "stdout and stderr are captured to output buffer",
+        "Completion signal is detected in output",
+        "Timeout is enforced (SIGTERM, then SIGKILL after 5s)",
+        "AgentResult includes success, output, timed_out, exit_code, completion_detected",
+        "Dry-run mode returns mock result without spawning",
+        "Optional callbacks for stdout/stderr streaming"
+      ],
+      "priority": 2,
+      "status": "pending",
+      "notes": "Reference: TypeScript src/agent/runner.ts:175-274. Use tokio::process::Command for async spawning."
+    },
+    {
+      "id": "US-012",
+      "title": "Implement git command wrappers",
+      "acceptance_criteria": [
+        "run_git_command executes git with args and returns stdout",
+        "run_gh_command executes gh CLI with args",
+        "is_git_repo checks for .git directory",
+        "get_current_branch returns current branch name",
+        "branch_exists checks if branch exists locally",
+        "has_uncommitted_changes checks git status",
+        "Dry-run mode logs commands without executing"
+      ],
+      "priority": 2,
+      "status": "pending",
+      "notes": "Reference: TypeScript src/git/index.ts:1-117. Use tokio::process::Command."
+    },
+    {
+      "id": "US-013",
+      "title": "Implement git branch operations",
+      "acceptance_criteria": [
+        "ensure_branch creates branch from base or checks out existing",
+        "commit_all stages all changes and commits with message",
+        "push_branch pushes branch to origin with -u flag",
+        "Returns BranchResult with branch_name and created flag",
+        "Handles errors (checkout failure, push failure) with GitError"
+      ],
+      "priority": 2,
+      "status": "pending",
+      "notes": "Reference: TypeScript src/git/index.ts:170-370"
+    },
+    {
+      "id": "US-014",
+      "title": "Implement GitHub PR operations",
+      "acceptance_criteria": [
+        "get_pr_by_branch queries existing PR via gh pr view",
+        "create_or_update_pr creates new PR or updates existing",
+        "is_pr_merged checks PR state via gh pr view --json state",
+        "Returns PrResult with url, number, created flag",
+        "PR body is passed correctly to gh pr create"
+      ],
+      "priority": 2,
+      "status": "pending",
+      "notes": "Reference: TypeScript src/git/index.ts:371-444. Requires gh CLI authenticated."
+    },
+    {
+      "id": "US-015",
+      "title": "Implement git preflight checks",
+      "acceptance_criteria": [
+        "check_git_preflight validates repository state",
+        "Checks: is git repo, not detached HEAD, no uncommitted changes",
+        "Optional: check remote sync status",
+        "Returns GitPreflightResult with valid flag and error list",
+        "Each error includes code, message, and recovery steps"
+      ],
+      "priority": 3,
+      "status": "pending",
+      "notes": "Reference: TypeScript src/git/index.ts:264-334"
+    },
+    {
+      "id": "US-016",
+      "title": "Implement research phase runner",
+      "acceptance_criteria": [
+        "run_phase_research loads item and validates state is 'idea'",
+        "Skips if research.md exists (unless --force)",
+        "Loads and renders research prompt template",
+        "Runs agent with prompt",
+        "Validates research.md was created",
+        "Transitions item state to 'researched'",
+        "Saves updated item to disk",
+        "Returns PhaseResult with success/error"
+      ],
+      "priority": 2,
+      "status": "pending",
+      "notes": "Reference: TypeScript src/workflow/itemWorkflow.ts:144-244"
+    },
+    {
+      "id": "US-017",
+      "title": "Implement plan phase runner",
+      "acceptance_criteria": [
+        "run_phase_plan loads item and validates state is 'researched'",
+        "Skips if plan.md and prd.json exist (unless --force)",
+        "Loads and renders plan prompt template",
+        "Runs agent with prompt",
+        "Validates plan.md and prd.json were created",
+        "Validates prd.json schema",
+        "Transitions item state to 'planned'",
+        "Saves updated item to disk"
+      ],
+      "priority": 2,
+      "status": "pending",
+      "notes": "Reference: TypeScript src/workflow/itemWorkflow.ts:246-375. PRD can be created via MCP tool or direct file write."
+    },
+    {
+      "id": "US-018",
+      "title": "Implement implement phase runner",
+      "acceptance_criteria": [
+        "run_phase_implement loads item and validates state is 'planned' or 'implementing'",
+        "Loads prd.json and checks for pending stories",
+        "Iterates through pending stories by priority",
+        "For each iteration: loads implement template, runs agent, reloads prd.json",
+        "Appends to progress.log after each iteration",
+        "Respects max_iterations from config",
+        "Transitions to 'implementing' on first iteration",
+        "Does NOT transition to 'in_pr' (that's PR phase's job)"
+      ],
+      "priority": 2,
+      "status": "pending",
+      "notes": "Reference: TypeScript src/workflow/itemWorkflow.ts:377-537. Story status updates via MCP tool or direct prd.json edit."
+    },
+    {
+      "id": "US-019",
+      "title": "Implement PR phase runner",
+      "acceptance_criteria": [
+        "run_phase_pr loads item and validates state is 'implementing'",
+        "Validates all stories are done",
+        "Runs git preflight checks",
+        "Ensures correct branch exists",
+        "Commits any uncommitted changes",
+        "Pushes branch to origin",
+        "Generates PR title/body (via agent or defaults)",
+        "Creates or updates PR via gh",
+        "Updates item with pr_url and pr_number",
+        "Transitions item state to 'in_pr'",
+        "Supports direct merge mode (skips PR, merges to base)"
+      ],
+      "priority": 2,
+      "status": "pending",
+      "notes": "Reference: TypeScript src/workflow/itemWorkflow.ts:574-768. PR body parsing uses JSON markers."
+    },
+    {
+      "id": "US-020",
+      "title": "Implement complete phase runner",
+      "acceptance_criteria": [
+        "run_phase_complete loads item and validates state is 'in_pr'",
+        "Checks PR is merged via gh pr view --json state",
+        "Returns error if PR not merged",
+        "Transitions item state to 'done'",
+        "Saves updated item to disk"
+      ],
+      "priority": 2,
+      "status": "pending",
+      "notes": "Reference: TypeScript src/workflow/itemWorkflow.ts:770-816"
+    },
+    {
+      "id": "US-021",
+      "title": "Implement get_next_phase helper",
+      "acceptance_criteria": [
+        "get_next_phase maps item state to next phase name",
+        "idea -> research, researched -> plan, planned -> implement, implementing -> pr, in_pr -> complete, done -> None"
+      ],
+      "priority": 2,
+      "status": "pending",
+      "notes": "Reference: TypeScript src/workflow/itemWorkflow.ts:836-855"
+    },
+    {
+      "id": "US-022",
+      "title": "Implement run_item orchestrator",
+      "acceptance_criteria": [
+        "run_item executes item through all phases until done or error",
+        "Calls get_next_phase to determine next step",
+        "Calls appropriate phase runner",
+        "Stops on first error or when done",
+        "Returns final PhaseResult"
+      ],
+      "priority": 2,
+      "status": "pending",
+      "notes": "Reference: TypeScript src/commands/run.ts:1-143"
+    },
+    {
+      "id": "US-023",
+      "title": "Implement CLI structure with clap",
+      "acceptance_criteria": [
+        "Cli struct defined with clap derive macro",
+        "Global options: --verbose, --quiet, --dry-run, --cwd",
+        "Commands enum with all subcommands",
+        "wreckit --help shows all commands and options",
+        "wreckit <command> --help shows command-specific help"
+      ],
+      "priority": 3,
+      "status": "pending",
+      "notes": "Reference: TypeScript src/index.ts:23-39 for global options"
+    },
+    {
+      "id": "US-024",
+      "title": "Implement init command",
+      "acceptance_criteria": [
+        "wreckit init creates .wreckit/ directory structure",
+        "Creates config.json with defaults",
+        "Creates prompts/ directory with template files",
+        "Creates items/ directory",
+        "--force overwrites existing directory",
+        "Returns error if not in git repo"
+      ],
+      "priority": 3,
+      "status": "pending",
+      "notes": "Reference: TypeScript src/commands/init.ts"
+    },
+    {
+      "id": "US-025",
+      "title": "Implement status command",
+      "acceptance_criteria": [
+        "wreckit status lists all items with id, state, title",
+        "--json outputs JSON array",
+        "Human-readable table format by default",
+        "Groups or sorts by state"
+      ],
+      "priority": 3,
+      "status": "pending",
+      "notes": "Reference: TypeScript src/commands/status.ts"
+    },
+    {
+      "id": "US-026",
+      "title": "Implement list command",
+      "acceptance_criteria": [
+        "wreckit list shows all items",
+        "--state <state> filters by workflow state",
+        "--json outputs JSON array",
+        "Human-readable format by default"
+      ],
+      "priority": 3,
+      "status": "pending",
+      "notes": "Reference: TypeScript src/commands/list.ts"
+    },
+    {
+      "id": "US-027",
+      "title": "Implement show command",
+      "acceptance_criteria": [
+        "wreckit show <id> displays item details",
+        "Shows all item fields",
+        "--json outputs full item JSON",
+        "Returns error if item not found"
+      ],
+      "priority": 3,
+      "status": "pending",
+      "notes": "Reference: TypeScript src/commands/show.ts"
+    },
+    {
+      "id": "US-028",
+      "title": "Implement phase commands (research, plan, implement, pr, complete)",
+      "acceptance_criteria": [
+        "wreckit research <id> runs research phase",
+        "wreckit plan <id> runs plan phase",
+        "wreckit implement <id> runs implement phase",
+        "wreckit pr <id> runs PR phase",
+        "wreckit complete <id> runs complete phase",
+        "--force flag triggers re-run even if artifacts exist",
+        "Returns appropriate exit codes"
+      ],
+      "priority": 3,
+      "status": "pending",
+      "notes": "Reference: TypeScript src/index.ts:225-378"
+    },
+    {
+      "id": "US-029",
+      "title": "Implement run command",
+      "acceptance_criteria": [
+        "wreckit run <id> executes item through all phases",
+        "Stops on error or when done",
+        "--force regenerates artifacts",
+        "Outputs progress to stdout"
+      ],
+      "priority": 3,
+      "status": "pending",
+      "notes": "Reference: TypeScript src/index.ts:380-409"
+    },
+    {
+      "id": "US-030",
+      "title": "Implement next command",
+      "acceptance_criteria": [
+        "wreckit next finds next incomplete item",
+        "Runs item through all phases",
+        "Selects item by priority/state ordering",
+        "Returns 'All items complete' if none pending"
+      ],
+      "priority": 3,
+      "status": "pending",
+      "notes": "Reference: TypeScript src/index.ts:411-459"
+    },
+    {
+      "id": "US-031",
+      "title": "Implement doctor command",
+      "acceptance_criteria": [
+        "wreckit doctor validates all items",
+        "Checks item.json schema validity",
+        "Checks state vs artifacts consistency",
+        "--fix auto-repairs recoverable issues",
+        "Reports issues found"
+      ],
+      "priority": 4,
+      "status": "pending",
+      "notes": "Reference: TypeScript src/commands/doctor.ts"
+    },
+    {
+      "id": "US-032",
+      "title": "Implement ideas command",
+      "acceptance_criteria": [
+        "wreckit ideas reads ideas from stdin or file",
+        "-f/--file <path> reads from file",
+        "Parses ideas into Item structs",
+        "Creates item directories with item.json",
+        "Generates unique IDs for each idea"
+      ],
+      "priority": 4,
+      "status": "pending",
+      "notes": "Reference: TypeScript src/commands/ideas.ts. Interview mode deferred."
+    },
+    {
+      "id": "US-033",
+      "title": "Add tracing/logging infrastructure",
+      "acceptance_criteria": [
+        "tracing subscriber initialized in main",
+        "--verbose enables debug level",
+        "--quiet suppresses info level",
+        "Log output includes timestamps and levels",
+        "Structured logging for machine parsing"
+      ],
+      "priority": 3,
+      "status": "pending",
+      "notes": "Use tracing-subscriber with env-filter"
+    },
+    {
+      "id": "US-034",
+      "title": "Unit tests for domain logic",
+      "acceptance_criteria": [
+        "Tests for get_next_state covering all states",
+        "Tests for validate_transition covering valid and invalid cases",
+        "Tests for apply_state_transition including immutability",
+        "Tests for all_stories_done and has_pending_stories",
+        "Edge case tests: same-state transition, backward transition, skip states"
+      ],
+      "priority": 3,
+      "status": "pending",
+      "notes": "Reference: TypeScript src/__tests__/domain.test.ts:1-443"
+    },
+    {
+      "id": "US-035",
+      "title": "Unit tests for schemas",
+      "acceptance_criteria": [
+        "JSON round-trip tests for Item, Config, Prd, Story",
+        "Tests for optional field serialization",
+        "Tests for enum serialization (WorkflowState, StoryStatus, etc.)"
+      ],
+      "priority": 3,
+      "status": "pending",
+      "notes": "Reference: TypeScript src/__tests__/schemas.test.ts"
+    },
+    {
+      "id": "US-036",
+      "title": "Integration tests with temp directories",
+      "acceptance_criteria": [
+        "Test init creates correct structure",
+        "Test full workflow with mocked agent",
+        "Test idempotent phase execution",
+        "Tests use tempfile crate for isolation"
+      ],
+      "priority": 4,
+      "status": "pending",
+      "notes": "Reference: TypeScript src/__tests__/integration/"
+    }
+  ]
+}

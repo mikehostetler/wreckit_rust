@@ -1,0 +1,8 @@
+# Seeds for failure cases proptest has generated in the past. It is
+# automatically read and these particular cases re-run before any
+# novel cases are generated.
+#
+# It is recommended to check this file in to source control so that
+# everyone who runs the test benefits from these saved cases.
+cc 8bd36e53d1000307c894216ca8348f2c86c02759da58ddc572568922bcfdef6f # shrinks to item = Item { schema_version: 1, id: "test-001", title: "Test Item", section: None, state: Idea, overview: "Test overview", branch: None, pr_url: None, pr_number: None, last_error: None, created_at: "2026-01-15T16:19:53.620082+00:00", updated_at: "2026-01-15T16:19:53.620083+00:00", problem_statement: None, motivation: None, success_criteria: None, technical_constraints: None, scope_in_scope: None, scope_out_of_scope: None, priority_hint: None, urgency_hint: None }, state = Idea
+cc 8e18af7f94aaa7e33c6d4fb4132f4c0b44d2fc1fcac4ec466110e03d7ab52b96 # shrinks to item = Item { schema_version: 1, id: "test-001", title: "Test Item", section: None, state: Idea, overview: "Test overview", branch: None, pr_url: None, pr_number: None, last_error: None, created_at: "2026-01-15T16:19:53.619960+00:00", updated_at: "2026-01-15T16:19:53.619962+00:00", problem_statement: None, motivation: None, success_criteria: None, technical_constraints: None, scope_in_scope: None, scope_out_of_scope: None, priority_hint: None, urgency_hint: None }

@@ -1,0 +1,525 @@
+{
+  "schema_version": 1,
+  "id": "003-build-tui-terminal-user-interface",
+  "branch_name": "wreckit/003-build-tui-terminal-user-interface",
+  "user_stories": [
+    {
+      "id": "US-001",
+      "title": "Add ratatui and crossterm dependencies",
+      "acceptance_criteria": [
+        "ratatui v0.30+ added to Cargo.toml dependencies",
+        "crossterm v0.28+ added to Cargo.toml dependencies",
+        "cargo build succeeds with new dependencies",
+        "cargo test passes with new dependencies"
+      ],
+      "priority": 1,
+      "status": "pending",
+      "notes": ""
+    },
+    {
+      "id": "US-002",
+      "title": "Create TUI module structure",
+      "acceptance_criteria": [
+        "src/tui/mod.rs created and exported in src/lib.rs",
+        "src/tui/runner.rs created with TuiRunner struct",
+        "src/tui/state.rs created with TuiState struct",
+        "src/tui/widgets.rs created with placeholder exports",
+        "cargo build succeeds"
+      ],
+      "priority": 1,
+      "status": "pending",
+      "notes": "Follows existing module pattern established by agent/, cli/, etc."
+    },
+    {
+      "id": "US-003",
+      "title": "Implement basic TUI lifecycle (setup, teardown, event loop)",
+      "acceptance_criteria": [
+        "TuiRunner::new() creates instance",
+        "TuiRunner::run() enters alternate screen and starts TUI",
+        "Press 'q' or Ctrl+C exits TUI cleanly",
+        "Terminal is restored to normal state after exit",
+        "Basic 'Wreckit TUI' text appears centered",
+        "cargo build and cargo test pass"
+      ],
+      "priority": 1,
+      "status": "pending",
+      "notes": "Phase 1 milestone - verifies terminal management works"
+    },
+    {
+      "id": "US-004",
+      "title": "Implement TuiState structure with immutable builder methods",
+      "acceptance_criteria": [
+        "TuiState struct with all fields from TypeScript version",
+        "TuiState::new() creates state from Vec<Item>",
+        "with_current_item() returns new TuiState with updated item",
+        "with_current_phase() returns new TuiState with updated phase",
+        "with_iteration() returns new TuiState with updated iteration count",
+        "with_current_story() returns new TuiState with updated story",
+        "with_item_state() returns new TuiState with updated item state",
+        "with_completed_count() returns new TuiState with updated count",
+        "with_logs() appends logs and enforces MAX_LOGS limit",
+        "with_log() appends single log and enforces limit",
+        "with_show_logs() toggles show_logs flag",
+        "with_agent_activity() updates activity for an item",
+        "Unit tests verify immutability (original unchanged)",
+        "cargo test passes"
+      ],
+      "priority": 1,
+      "status": "pending",
+      "notes": "Phase 2 - follows existing Item builder pattern from src/schemas/item.rs:169-199"
+    },
+    {
+      "id": "US-005",
+      "title": "Implement AgentActivity and ToolExecution structures",
+      "acceptance_criteria": [
+        "ToolExecution struct with tool_use_id, tool_name, input, status, result, timestamps",
+        "ToolStatus enum with Running, Completed, Error variants",
+        "AgentActivity struct with thoughts Vec and tools Vec",
+        "AgentActivity::default() creates empty activity",
+        "append_thought() adds thought and enforces MAX_THOUGHTS limit",
+        "append_thought() merges short thoughts (< 120 chars)",
+        "append_tool() adds tool and enforces MAX_TOOLS limit",
+        "update_tool_status() updates tool status and sets finished_at timestamp",
+        "Unit tests for buffer limits",
+        "cargo test passes"
+      ],
+      "priority": 1,
+      "status": "pending",
+      "notes": "Phase 2 - matches TypeScript ToolExecution interface from dashboard.ts:3-11"
+    },
+    {
+      "id": "US-006",
+      "title": "Define agent event types for TUI updates",
+      "acceptance_criteria": [
+        "AgentEvent enum with AssistantText, ToolStarted, ToolResult, ToolError, Error, RunResult variants",
+        "AssistantText variant contains text field",
+        "ToolStarted variant contains tool_use_id, tool_name, input fields",
+        "ToolResult variant contains tool_use_id, result fields",
+        "ToolError variant contains tool_use_id, error field",
+        "Error variant contains message field",
+        "RunResult variant has no fields",
+        "AgentEvent implements Debug, Clone, Serialize, Deserialize",
+        "cargo build and cargo test pass"
+      ],
+      "priority": 2,
+      "status": "pending",
+      "notes": "Phase 2 - src/tui/events.rs matches TypeScript AgentEvent from agentEvents.ts"
+    },
+    {
+      "id": "US-007",
+      "title": "Implement agent event parsing and sanitization",
+      "acceptance_criteria": [
+        "sanitize_assistant_text() removes code blocks (`````) from text",
+        "sanitize_assistant_text() removes tool calls",
+        "sanitize_assistant_text() collapses whitespace",
+        "sanitize_assistant_text() returns None if text is empty after sanitization",
+        "sanitize_assistant_text() truncates to reasonable length",
+        "Unit tests for various input patterns",
+        "Regex pattern compiles successfully",
+        "cargo test passes"
+      ],
+      "priority": 2,
+      "status": "pending",
+      "notes": "Phase 2 - matches TypeScript sanitizeAssistantText from runner.ts:10-22"
+    },
+    {
+      "id": "US-008",
+      "title": "Implement channel-based state updates",
+      "acceptance_criteria": [
+        "TuiUpdate enum with variants for all state changes",
+        "TuiRunner has state_rx: mpsc::Receiver<TuiUpdate>",
+        "Background task processes state updates asynchronously",
+        "State updates are applied to Arc<Mutex<TuiState>>",
+        "TuiRunner::get_state() returns cloned state",
+        "TuiRunner::create_update_sender() returns mpsc::Sender<TuiUpdate>",
+        "Concurrent updates are serialized correctly",
+        "Integration test with multiple concurrent updates",
+        "cargo test passes"
+      ],
+      "priority": 2,
+      "status": "pending",
+      "notes": "Phase 2 - uses tokio::sync::mpsc for async communication"
+    },
+    {
+      "id": "US-009",
+      "title": "Implement agent event handling in TuiState",
+      "acceptance_criteria": [
+        "TuiRunner::handle_agent_event() processes AgentEvent variants",
+        "AssistantText event sanitizes and appends thought",
+        "ToolStarted event creates ToolExecution with Running status",
+        "ToolResult event updates tool to Completed with result",
+        "ToolError event updates tool to Error and adds error thought",
+        "Error event appends error thought",
+        "RunResult event is no-op",
+        "Events update activity_by_item HashMap correctly",
+        "Integration tests with mock events",
+        "cargo test passes"
+      ],
+      "priority": 2,
+      "status": "pending",
+      "notes": "Phase 2 - matches TypeScript appendAgentEvent from runner.ts:140-211"
+    },
+    {
+      "id": "US-010",
+      "title": "Render header widget (5 lines)",
+      "acceptance_criteria": [
+        "render_header() function accepts Frame, Rect, TuiState",
+        "Line 1: '┌─ Wreckit ─┐' title with cyan border",
+        "Line 2: Current item or 'Waiting...' text",
+        "Line 3: Phase and iteration count or 'Phase: idle'",
+        "Line 4: Story ID and title or 'Story: none'",
+        "Line 5: Separator '├──────┤' with cyan border",
+        "All text padded to width",
+        "Border color is Color::Cyan",
+        "Manual test with various states",
+        "cargo build passes"
+      ],
+      "priority": 3,
+      "status": "pending",
+      "notes": "Phase 3 - matches TypeScript Header.tsx component"
+    },
+    {
+      "id": "US-011",
+      "title": "Render items pane widget",
+      "acceptance_criteria": [
+        "render_items_pane() function accepts Frame, Rect, TuiState",
+        "Lists all items with state icons",
+        "State icons: ✓ for done, → for implementing/in_pr, ○ for others",
+        "Item ID, state, title displayed per item",
+        "Story ID in brackets if current_story_id is set",
+        "Active item highlighted in yellow if set",
+        "Border with cyan color",
+        "Scrollable if items exceed pane height",
+        "Manual test with 0, 1, many items",
+        "cargo build passes"
+      ],
+      "priority": 3,
+      "status": "pending",
+      "notes": "Phase 3 - matches TypeScript ItemsPane.tsx component"
+    },
+    {
+      "id": "US-012",
+      "title": "Render active item pane widget",
+      "acceptance_criteria": [
+        "render_active_item_pane() function accepts Frame, Rect, TuiState",
+        "Shows 'Current Item: {id}' if item set",
+        "Shows 'State: {state}' for current item",
+        "Shows item title",
+        "Shows 'No active item' if no current item",
+        "Title 'Active Item' in border",
+        "Border with cyan color",
+        "Manual test with and without active item",
+        "cargo build passes"
+      ],
+      "priority": 3,
+      "status": "pending",
+      "notes": "Phase 3 - matches TypeScript ActiveItemPane.tsx component"
+    },
+    {
+      "id": "US-013",
+      "title": "Render agent activity pane widget",
+      "acceptance_criteria": [
+        "render_agent_activity_pane() function accepts Frame, Rect, TuiState",
+        "Shows thoughts with bullet points (•)",
+        "Shows tools with status symbols (▶ running, ✓ completed, ✗ error)",
+        "Shows tool names",
+        "Shows 'No activity yet' if no activity",
+        "Shows 'No active item' if no current item",
+        "Title 'Agent Activity' in border",
+        "Border with cyan color",
+        "Manual test with various activities",
+        "cargo build passes"
+      ],
+      "priority": 3,
+      "status": "pending",
+      "notes": "Phase 3 - matches TypeScript AgentActivityPane.tsx component"
+    },
+    {
+      "id": "US-014",
+      "title": "Render logs pane widget",
+      "acceptance_criteria": [
+        "render_logs_pane() function accepts Frame, Rect, TuiState, scroll_offset",
+        "Shows logs as list",
+        "Shows '(no output yet)' if no logs",
+        "Respects scroll_offset for scrolling",
+        "Title 'Agent Output' in border",
+        "Border with cyan color",
+        "Manual test with scrolling",
+        "cargo build passes"
+      ],
+      "priority": 3,
+      "status": "pending",
+      "notes": "Phase 3 - matches TypeScript LogsPane.tsx component"
+    },
+    {
+      "id": "US-015",
+      "title": "Render footer widget (4 lines)",
+      "acceptance_criteria": [
+        "render_footer() function accepts Frame, Rect, TuiState, show_logs",
+        "Line 1: Separator '├──────┤' with cyan border",
+        "Line 2: 'Progress: {completed}/{total} complete | Runtime: {HH:MM:SS}'",
+        "Line 3: Empty line",
+        "Line 4: '[q] quit  [l] {logs|items}' keyboard shortcuts",
+        "Runtime formatted as HH:MM:SS",
+        "Runtime updates in real-time",
+        "Border color is Color::Cyan",
+        "Manual test with various states",
+        "cargo build passes"
+      ],
+      "priority": 3,
+      "status": "pending",
+      "notes": "Phase 3 - matches TypeScript Footer.tsx component"
+    },
+    {
+      "id": "US-016",
+      "title": "Implement helper functions for rendering",
+      "acceptance_criteria": [
+        "get_state_icon() returns correct icon for state",
+        "get_state_color() returns Green for done, Yellow for implementing/in_pr, White for others",
+        "pad_to_width() truncates with ellipsis if too long",
+        "pad_to_width() right-pads with spaces if too short",
+        "format_runtime() returns HH:MM:SS format",
+        "format_runtime() calculates duration correctly",
+        "Unit tests for all helper functions",
+        "cargo test passes"
+      ],
+      "priority": 3,
+      "status": "pending",
+      "notes": "Phase 3 - utility functions match TypeScript helpers from dashboard.ts:85-83"
+    },
+    {
+      "id": "US-017",
+      "title": "Implement responsive layout with panes",
+      "acceptance_criteria": [
+        "Main layout split into header (5 lines), main (flex), footer (4 lines)",
+        "Main area split into left pane (40%) and right pane (60%)",
+        "Right pane split into active item (4 lines) and agent activity (flex)",
+        "Layout recalculates on terminal resize",
+        "Layout handles minimum 80x24 terminal",
+        "Layout handles large terminals (200x60+)",
+        "Manual test with resize events",
+        "cargo build passes"
+      ],
+      "priority": 3,
+      "status": "pending",
+      "notes": "Phase 3 - matches TypeScript layout from InkApp.tsx:102-150"
+    },
+    {
+      "id": "US-018",
+      "title": "Implement keyboard controls",
+      "acceptance_criteria": [
+        "'q' key quits TUI",
+        "Ctrl+C key combination quits TUI",
+        "'l' key toggles between dashboard and logs view",
+        "'j' or ↓ arrow scrolls logs down one line",
+        "'k' or ↑ arrow scrolls logs up one line",
+        "PageDown scrolls logs down by page",
+        "PageUp scrolls logs up by page",
+        "'g' jumps to top of logs",
+        "'G' jumps to bottom of logs",
+        "Scrolling only works in logs view",
+        "scroll_offset state variable tracks scroll position",
+        "auto_scroll state variable tracks auto-scroll mode",
+        "Manual test of all keyboard controls",
+        "cargo build passes"
+      ],
+      "priority": 3,
+      "status": "pending",
+      "notes": "Phase 3 - matches TypeScript keyboard handling from InkApp.tsx:78-96"
+    },
+    {
+      "id": "US-019",
+      "title": "Add event loop with state polling",
+      "acceptance_criteria": [
+        "TUI redraws every 100ms",
+        "crossterm::event::poll() with 100ms timeout",
+        "Events are processed immediately when available",
+        "State updates from channels are checked every iteration",
+        "Auto-scroll resets scroll_offset to 0 when new logs arrive",
+        "Resize events force redraw",
+        "Manual test with real-time updates",
+        "cargo build passes"
+      ],
+      "priority": 3,
+      "status": "pending",
+      "notes": "Phase 3 - matches TypeScript useEffect timer from InkApp.tsx:37-41"
+    },
+    {
+      "id": "US-020",
+      "title": "Add agent event parser",
+      "acceptance_criteria": [
+        "src/agent/parser.rs module created",
+        "parse_agent_line() function parses single line",
+        "Detects <tool_use>...</tool_use> blocks",
+        "Detects <tool_result>...</tool_result> blocks",
+        "Detects <assistant_text>...</assistant_text> blocks",
+        "Returns Vec<AgentEvent> for all events found in line",
+        "Returns empty vec if no events found",
+        "Handles malformed input gracefully",
+        "Regex patterns compile successfully",
+        "Unit tests for all event types",
+        "cargo test passes"
+      ],
+      "priority": 4,
+      "status": "pending",
+      "notes": "Phase 4 - parse structured events from agent stdout"
+    },
+    {
+      "id": "US-021",
+      "title": "Update RunAgentOptions with TUI callback",
+      "acceptance_criteria": [
+        "RunAgentOptions has on_tui_event field",
+        "on_tui_event is Option<Box<dyn Fn(AgentEvent) + Send>>",
+        "run_agent() accepts options with on_tui_event",
+        "Agent runner calls on_tui_event() for each parsed event",
+        "compile succeeds with new callback",
+        "Unit test with mock callback",
+        "cargo test passes"
+      ],
+      "priority": 4,
+      "status": "pending",
+      "notes": "Phase 4 - extends existing RunAgentOptions from src/agent/runner.rs:36-57"
+    },
+    {
+      "id": "US-022",
+      "title": "Stream agent events to TUI",
+      "acceptance_criteria": [
+        "Agent stdout is parsed for events in real-time",
+        "Events are sent to TUI via callback",
+        "TUI state is updated via TuiUpdate::AgentEvent",
+        "Tool executions appear in AgentActivityPane",
+        "Thoughts appear in AgentActivityPane after sanitization",
+        "Buffer limits are enforced during streaming",
+        "Manual test with agent execution",
+        "Integration test with mock agent output",
+        "cargo test passes"
+      ],
+      "priority": 4,
+      "status": "pending",
+      "notes": "Phase 4 - connects agent runner to TUI state updates"
+    },
+    {
+      "id": "US-023",
+      "title": "Create helper for running agents with TUI",
+      "acceptance_criteria": [
+        "src/tui/agent_helper.rs module created",
+        "run_agent_with_tui() function accepts options, item_id, tui_tx",
+        "Creates RunAgentOptions with on_tui_event callback",
+        "Callback sends TuiUpdate::AgentEvent to TUI",
+        "Returns AgentResult from agent execution",
+        "Errors are propagated correctly",
+        "Unit test with mock agent",
+        "cargo test passes"
+      ],
+      "priority": 4,
+      "status": "pending",
+      "notes": "Phase 4 - provides convenient API for command implementations"
+    },
+    {
+      "id": "US-024",
+      "title": "Update run command with TUI support",
+      "acceptance_criteria": [
+        "src/cli/commands/run.rs execute() function implemented",
+        "Loads item by ID",
+        "Checks if --no-tui flag is set",
+        "Checks if stdout is TTY",
+        "Creates TuiRunner if TUI enabled",
+        "Runs workflow with TUI updates",
+        "Runs workflow without TUI if --no-tui or non-TTY",
+        "Manual test with 'wreckit run <id>'",
+        "Manual test with 'wreckit run --no-tui <id>'",
+        "cargo build passes"
+      ],
+      "priority": 4,
+      "status": "pending",
+      "notes": "Phase 5 - primary TUI entry point"
+    },
+    {
+      "id": "US-025",
+      "title": "Add --no-tui global flag",
+      "acceptance_criteria": [
+        "--no-tui flag added to Cli struct",
+        "Flag is global (available on all commands)",
+        "Flag is optional with default false",
+        "Flag is accessible in command context",
+        "Manual test with 'wreckit --no-tui run <id>'",
+        "cargo build passes"
+      ],
+      "priority": 4,
+      "status": "pending",
+      "notes": "Phase 5 - allows disabling TUI for CI/CD"
+    },
+    {
+      "id": "US-026",
+      "title": "Add atty dependency for terminal detection",
+      "acceptance_criteria": [
+        "atty v0.2 added to Cargo.toml",
+        "atty::is(atty::Stream::Stdout) used to detect TTY",
+        "TUI only starts if stdout is TTY",
+        "Manual test with pipe to file (no TUI)",
+        "Manual test with normal terminal (TUI starts)",
+        "cargo build passes"
+      ],
+      "priority": 4,
+      "status": "pending",
+      "notes": "Phase 5 - prevents TUI in non-interactive environments"
+    },
+    {
+      "id": "US-027",
+      "title": "Write comprehensive unit tests",
+      "acceptance_criteria": [
+        "Unit tests for TuiState creation and builder methods",
+        "Unit tests for AgentActivity and ToolExecution",
+        "Unit tests for buffer limit enforcement",
+        "Unit tests for agent event parsing",
+        "Unit tests for event sanitization",
+        "Unit tests for helper functions (get_state_icon, pad_to_width, format_runtime)",
+        "All tests pass: cargo test",
+        "Test coverage > 80% for tui module"
+      ],
+      "priority": 2,
+      "status": "pending",
+      "notes": "Ongoing through all phases - write tests as code is developed"
+    },
+    {
+      "id": "US-028",
+      "title": "Write integration tests for TUI lifecycle",
+      "acceptance_criteria": [
+        "Integration test for TUI start and exit",
+        "Integration test for terminal restoration",
+        "Integration test for keyboard event handling",
+        "Integration test for resize event handling",
+        "Integration test for channel communication",
+        "Integration test for concurrent state updates",
+        "All tests pass: cargo test",
+        "Tests use mock terminal to avoid requiring actual TTY"
+      ],
+      "priority": 2,
+      "status": "pending",
+      "notes": "Ongoing through all phases - integration tests for TUI behavior"
+    },
+    {
+      "id": "US-029",
+      "title": "Perform manual testing and validation",
+      "acceptance_criteria": [
+        "Test basic TUI start/exit",
+        "Test all keyboard controls (q, l, j/k, page up/down, g/G)",
+        "Test terminal resize handling",
+        "Test with minimum 80x24 terminal",
+        "Test with large terminal (200x60)",
+        "Test with 0 items",
+        "Test with 1 item",
+        "Test with many items",
+        "Test agent event streaming (if agent available)",
+        "Test color scheme matches TypeScript version",
+        "Test runtime timer updates",
+        "Test log scrolling",
+        "Test dashboard/logs toggle",
+        "All manual tests pass"
+      ],
+      "priority": 2,
+      "status": "pending",
+      "notes": "Ongoing through all phases - manual testing after each phase"
+    }
+  ]
+}

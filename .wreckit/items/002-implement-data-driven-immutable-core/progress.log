@@ -1,0 +1,124 @@
+# Implementation Progress Log
+
+## Item: 002-implement-data-driven-immutable-core
+## Date: 2026-01-15
+
+### Summary
+Successfully implemented data-driven immutable core with all operations using immutable data patterns. All 6 user stories completed with 114 tests passing.
+
+### Completed Work
+
+#### US-002-001: Add PartialEq derives and fix module compilation
+- Created `src/workflow/mod.rs` placeholder module file
+- Added `PartialEq` derive to `Story`, `Prd`, and `Item` structs
+- All existing tests continue to pass
+- **Impact**: Enables testing of immutability guarantees
+
+#### US-002-002: Add immutable builder methods to Item
+- Added `with_state()` - returns new Item with updated state and timestamp
+- Added `with_branch()` - returns new Item with updated branch and timestamp
+- Added `with_pr()` - returns new Item with PR URL/number and timestamp
+- Added `with_error()` - returns new Item with error message and timestamp
+- Added `with_updated_timestamp()` - returns new Item with current timestamp
+- Marked `touch()` as `#[deprecated]` but kept it for internal use
+- Added private `touch_returning()` helper for builder methods
+- Added 5 new tests verifying immutability and fluent API
+- **Impact**: Core Item now has full immutable builder API
+
+#### US-002-003: Add immutable builder methods to Prd and Story
+- **Story methods:**
+  - `with_status()` - returns new Story with given status
+  - `with_notes()` - returns new Story with given notes
+  - `as_done()` - convenience method to mark story as done
+- **Prd methods:**
+  - `with_story_status()` - returns new Prd with updated story status (handles missing ID gracefully)
+  - `with_story()` - returns new Prd with story added or replaced
+  - `with_story_done()` - returns new Prd with specified story marked done
+  - `with_all_stories_done()` - returns new Prd with all stories marked done
+- Marked `mark_story_done()` as `#[deprecated]`
+- Added `#![allow(deprecated)]` to test module for testing deprecated methods
+- Added 8 new tests verifying immutability and edge cases
+- **Impact**: Prd/Story now have full immutable builder API for collection updates
+
+#### US-002-004: Refactor domain transitions to use immutable builders
+- Updated `apply_state_transition()` to use `item.clone().with_state(next_state)` instead of field mutation
+- Updated `make_item()` test helper to use `.with_state()` builder
+- Updated `make_prd_with_stories()` test helper in both transitions.rs and validation.rs to use `.with_status()` builder
+- Removed all direct field mutations (`item.field =`) from domain logic
+- All 31 domain tests pass
+- **Impact**: Core business logic now follows immutable patterns
+
+#### US-002-005: Update PRD tests to use immutable builders
+- Updated `test_prd_all_stories_done` to use `prd = prd.with_story_done("US-001")`
+- Updated `test_prd_has_pending_stories` to use `with_story_done()`
+- Updated `test_prd_next_pending_story` to use `with_story_done()`
+- All tests use variable shadowing pattern (`prd = prd.with_x()`)
+- Test logic unchanged - only mechanics of state updates changed
+- All 16 PRD tests pass
+- **Impact**: Tests demonstrate immutable patterns and don't generate deprecation warnings
+
+#### US-002-006: Add property-based tests for immutability guarantees
+- Added `proptest = "1.0"` to dev-dependencies (compatible with Rust 1.80)
+- Created `src/domain/property_tests.rs` module with 11 property-based tests:
+  - **Immutability tests (4):**
+    - `test_apply_transition_never_mutates` - verifies transitions don't mutate input
+    - `test_with_state_is_immutable` - verifies with_state doesn't mutate original
+    - `test_with_story_status_is_immutable` - verifies Prd builders don't mutate original
+    - `test_with_pr_is_immutable` - verifies with_pr doesn't mutate original
+  - **Consistency tests (4):**
+    - `test_with_state_consistent_state` - verifies same state produced when applied twice
+    - `test_with_error_consistent_value` - verifies same error value when applied twice
+    - `test_with_story_status_is_idempotent` - true idempotency for Story (no timestamp)
+    - `test_with_all_stories_done_is_idempotent` - true idempotency for Prd (no timestamp)
+  - **Timestamp tests (3):**
+    - `test_with_state_updates_timestamp` - verifies timestamp always updates
+    - `test_with_pr_updates_timestamp` - verifies timestamp always updates
+    - `test_with_error_updates_timestamp` - verifies timestamp always updates
+- Added property tests module to `domain/mod.rs`
+- All 11 property tests pass, testing 256 random cases each
+- **Impact**: Strong guarantees of immutability across thousands of random inputs
+
+### Key Design Decisions
+
+1. **Timestamp updates**: All Item builder methods (`with_state`, `with_branch`, `with_pr`, `with_error`) automatically update `updated_at` timestamp. This is intentional - any state change should update the timestamp.
+
+2. **Private helper method**: Created `touch_returning()` as a private helper that returns `Self`, while keeping deprecated public `touch(&mut self)` for backwards compatibility.
+
+3. **Collection updates**: Prd methods like `with_story_status()` use `clone()` heavily. This is acceptable for small data structures. Can optimize with `Arc` later if profiling shows issues.
+
+4. **Missing story IDs**: `with_story_status()` returns Prd unchanged if story_id not found (no panic). This is safer for production use.
+
+5. **Idempotency vs timestamps**: Item builders that update timestamps are NOT truly idempotent (timestamps differ). Property tests verify "consistent state" instead. Prd/Story builders without timestamps ARE truly idempotent.
+
+6. **Test helpers**: Test helpers still use `mut` locally for `vec.push()`, which is acceptable - only business logic must be immutable.
+
+### Test Results
+- **Total tests**: 114 passed, 0 failed
+- **Property tests**: 11 passed (each testing 256 random cases)
+- **Coverage**: All immutable operations verified with both unit and property tests
+
+### Files Modified
+1. `src/workflow/mod.rs` - Created placeholder module
+2. `src/schemas/item.rs` - Added PartialEq, builder methods, tests
+3. `src/schemas/prd.rs` - Added PartialEq, builder methods for Prd/Story, updated tests
+4. `src/domain/transitions.rs` - Refactored to use builders, updated test helpers
+5. `src/domain/validation.rs` - Updated test helpers to use builders
+6. `src/domain/mod.rs` - Added property tests module
+7. `src/domain/property_tests.rs` - Created new property tests module
+8. `Cargo.toml` - Added proptest dependency
+
+### Breaking Changes
+None - all changes are backwards compatible. Old mutable methods are deprecated but still functional.
+
+### Future Work
+- Next major version can remove deprecated `&mut self` methods
+- Consider adding `#[must_use]` attribute to builder methods
+- Profile performance if cloning becomes bottleneck (add `Arc` if needed)
+- Implement workflow phase runners in `src/workflow/` module using these immutable patterns
+
+### Lessons Learned
+1. Rust's move semantics make immutable patterns natural - builder methods taking `self` by value are idiomatic
+2. Property tests with proptest provide much stronger guarantees than unit tests alone
+3. Timestamp updates make true idempotency impossible for operations that should track when changes occurred
+4. Collection cloning is acceptable for small data sizes - profile before optimizing
+5. Deprecation warnings help guide users to new API without breaking existing code
